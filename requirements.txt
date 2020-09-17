@@ -1,0 +1,5 @@
+gym==0.17.2
+pandas==1.1.2
+matplotlib==3.3.1
+pyglet==1.5.0
+bokeh==2.1.1
