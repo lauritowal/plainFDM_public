@@ -28,7 +28,7 @@ class WrapperOpenAI (gym.Env):
         high_action_space = np.array([1.], dtype=np.float32)
         self.action_space = spaces.Box(low=-high_action_space, high=high_action_space, dtype=np.float32)
         # Zustandsraum 4 current_phi_dot, current_phi, abs(error_current_phi_target_phi), integration_error
-        high_observation_space = np.array([np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32)
+        high_observation_space = np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32)
         self.observation_space = spaces.Box(low=-high_observation_space, high=high_observation_space, dtype=np.float32)
         # reward
         self.reward_range = np.array([-np.inf, np.inf], dtype=np.float32)
@@ -39,13 +39,16 @@ class WrapperOpenAI (gym.Env):
         self.stepweite = stepweite
         self.udpClient = UdpClient('127.0.0.1', 5566)
         # frage: ist das die richtige Stelle, oder besser im DDPG-Controller
-        self.targetValues = {'targetPhi': 10,
+        self.targetValues = {'targetPhi': 0,
                              'targetTheta': 0,
-                             'targetPsi': 0}
+                             'targetPsi': 0,
+                             'targetSpeed': 0}
         self.envelopeBounds = {'phiMax': 20,
                                'phiMin': -20,
-                               'thetaMax': 10,
-                               'thetaMin': -10
+                               'thetaMax': 30,
+                               'thetaMin': -30,
+                               'speedMax': 80,
+                               'speedMin': 30
                                }
 
         self.observationErrorAkkumulation = np.zeros(3)
@@ -56,16 +59,16 @@ class WrapperOpenAI (gym.Env):
         self.anzahlEpisoden = 0
 
         self.servo_command = 0
-        self.action_servo_command_history = np.zeros(10)
-        self.varianz_servo_actions = 0
+        self.action_servo_command_history = np.zeros(5)
+        self.bandbreite_servo_actions = 0
 
     def reset(self):
         self.observationErrorAkkumulation = np.zeros(3)
         self.integration_error_stepsize_ = 0
 
         self.servo_command = 0
-        self.action_servo_command_history = np.zeros(10)
-        self.varianz_servo_actions = 0
+        self.action_servo_command_history = np.zeros(5)
+        self.bandbreite_servo_actions = 0
         self.anzahlSteps = 1
         self.anzahlEpisoden += 1
         self.targetValues['targetPhi'] = np.random.uniform(-15, 15)
@@ -128,12 +131,12 @@ class WrapperOpenAI (gym.Env):
 
         self.action_servo_command_history = np.roll(self.action_servo_command_history, len(self.action_servo_command_history) - 1)
         self.action_servo_command_history[-1] = self.servo_command
-        #self.bandbreite_servo_actions = np.abs(np.min(self.action_servo_command_history) - np.max(self.action_servo_command_history))
-        self.varianz_servo_actions = np.var(self.action_servo_command_history)
+        command_minimum = np.min(self.action_servo_command_history)
+        command_maximum = np.max(self.action_servo_command_history)
+        self.bandbreite_servo_actions = np.abs(command_minimum - command_maximum)
 
-        # enrichment of Observation: akkumulated error -> 1. rotate and add element 2. reduce to skalar
         observation = np.asarray(
-            [current_phi_dot, current_phi, error_current_phi_to_target_phi, self.integration_error_stepsize_, self.varianz_servo_actions])
+            [current_phi_dot, current_phi, error_current_phi_to_target_phi, self.integration_error_stepsize_, command_minimum, command_maximum])
 
         return observation
 
@@ -144,12 +147,12 @@ class WrapperOpenAI (gym.Env):
             reward += -1000
         # Abweichung abs(target-current) > 1 -> -1
         if np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi']) > 1:
-            reward += -1
+            reward += -5
         # Abweichung abs(target-current) <= 1 -> 10
         if np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi']) <= 1:
             reward += 10
         #reward += -0.01 * np.power((10 * self.action_servo_command_history[0] - 10 * self.action_servo_command_history[1]), 2)
-        reward += -10 * self.varianz_servo_actions
+        reward += -1 * self.bandbreite_servo_actions
         return reward
 
     def check_done(self, observation):
