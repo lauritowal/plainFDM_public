@@ -44,7 +44,9 @@ for step in range(steps):
     #Delta State
     aircraftStateDelta0_1 = aircraftState1  - aircraftState0
     #neue Position in g_ks
-    [aircraft.x_geo, aircraft.y_geo, aircraft.z_geo] = [aircraft.x_geo, aircraft.y_geo, aircraft.z_geo] + umrechnungenKoordinaten.flug2geo([aircraftStateDelta0_1[3],aircraftStateDelta0_1[4],aircraftStateDelta0_1[5]], aircraft.phi, aircraft.theta, aircraft.psi)
+    [aircraft.x_geo, aircraft.y_geo, aircraft.z_geo] = [aircraft.x_geo, aircraft.y_geo, aircraft.z_geo] + umrechnungenKoordinaten.flug2geo([aircraftStateDelta0_1[3], aircraftStateDelta0_1[4], aircraftStateDelta0_1[5]], aircraft.phi, aircraft.theta, aircraft.psi)
+    # Sinkgeschwindigkeit im g_ks
+    [x_dot_g_ks, y_dot_g_ks, z_dot_g_ks] = umrechnungenKoordinaten.flug2geo([aircraftState1[0], aircraftState1[1], aircraftState1[2]], aircraft.phi, aircraft.theta, aircraft.psi)
     #send Position and angle to Unity
     udpClient.send((struct.pack('fff', aircraft.phi, aircraft.theta, 0)))
     # Headline: PID-Regler
@@ -59,7 +61,7 @@ for step in range(steps):
     aircraft.SteuerflaechenUndMotorStellung.deltaThrust = 0
     # Headline: ab hier für plotten
     plotter.addData(aircraft.getState(), aircraft.getForces(), aircraft.getMoments(), aircraft.alpha, aircraft.beta, np.rad2deg(aircraft.SteuerflaechenUndMotorStellung.getSteuerflaechenUndMotorStellung()), step)
-    plotter.add_data_xyz([aircraft.x_geo, aircraft.y_geo, aircraft.z_geo], step)
+    plotter.add_data_xyz([aircraft.x_geo, aircraft.y_geo, aircraft.z_geo], z_dot_g_ks, step)
 
 #zeitmessung für develop
 ende = time.time()

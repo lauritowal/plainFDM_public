@@ -21,7 +21,7 @@ class PlotState(object):
                                         'beta', 'deltaElevator', 'deltaAileron', 'deltaRudder', 'deltaThrust',
                                         'tVerlauf'])
         self.df_target = pd.DataFrame(columns=['target', 'tVerlauf'])
-        self.df_xyz = pd.DataFrame(columns=['x', 'y', 'z', 'tVerlauf'])
+        self.df_xyz = pd.DataFrame(columns=['x', 'y', 'z', 'z_dot_g_ks', 'tVerlauf'])
 
 
     def addData(self, state, force, moments, alpha, beta, deltaControls, i):
@@ -35,8 +35,8 @@ class PlotState(object):
         self.df_target = self.df_target.append(pd.Series([target, i],
                                            index=self.df_target.columns), ignore_index=True)
 
-    def add_data_xyz(self, xyz, i):
-        self.df_xyz = self.df_xyz.append(pd.Series([xyz[0], xyz[1], xyz[2], i],
+    def add_data_xyz(self, xyz, z_dot_g_ks, i):
+        self.df_xyz = self.df_xyz.append(pd.Series([xyz[0], xyz[1], xyz[2], z_dot_g_ks, i],
                                                          index=self.df_xyz.columns), ignore_index=True)
 
 
@@ -51,6 +51,7 @@ class PlotState(object):
 
         for items in listData2Plot:
             p.line(self.df[items].index.values, self.df[items], name=items, legend_label=items, line_width=2, color=next(colors))
-        p.line(self.df_target['target'].index.values, self.df_target['target'], legend_label="target", name="target")
+        #p.line(self.df_target['target'].index.values, self.df_target['target'], legend_label="target", name="target")
         p.line(self.df_xyz['z'].index.values, self.df_xyz['z'], line_width=2, legend_label="z_g_ks", name="z_g_ks")
+        p.line(self.df_xyz['z_dot_g_ks'].index.values, self.df_xyz['z_dot_g_ks'], line_width=2, legend_label="z_dot_g_ks", name="z_dot_g_ks")
         save(p)

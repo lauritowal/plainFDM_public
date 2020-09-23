@@ -62,6 +62,10 @@ class Aircraft(object):
         self.x_geo = 0
         self.y_geo = 0
         self.z_geo = 0
+        self.x_dot_g_ks = 0
+        self.y_dot_g_ks = 0
+        self.z_dot_g_ks = 0
+
 
         # EARTH CONSTANTS
         # todo: hat nichts mit dem ac zu tun und muss ins Enviroment
