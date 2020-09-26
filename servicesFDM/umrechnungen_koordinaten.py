@@ -17,8 +17,7 @@ class UmrechnungenKoordinaten(object):
         return body_coords
 
 
-    def geo2flug(self, geo_coords, phi=0.0, theta=0.0, psi=0.0):
-        # passt und entspricht A.1.2 Flugregelung
+    def geo2flug(self, geo_coords, phi=0, theta=0, psi=0):
         Lbh = np.array([
             [np.cos(theta) * np.cos(psi), np.cos(theta) * np.sin(psi), - np.sin(theta)],
             [np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(phi) * np.sin(psi), np.sin(phi) * np.sin(theta) * np.sin(psi) + np.cos(phi) * np.cos(psi), np.sin(phi) * np.cos(theta)],
@@ -31,7 +30,6 @@ class UmrechnungenKoordinaten(object):
 
     def flug2geo(self, flug_coords, phi=0, theta=0, psi=0):
         # Transformation matrix from body to local horizon
-        # Headline: Korrekt, mehrmals geprüft
         Lhb = np.array([
             [np.cos(theta) * np.cos(psi),
              np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(phi) * np.sin(psi),
@@ -69,12 +67,10 @@ class UmrechnungenKoordinaten(object):
 
 
 def main():
-
-    service = UmrechnungenKoordinaten()
+    service = Services()
     gewichtsvektor_g_ks = [0, 0, 9.81]
-    gewichtsvektor_f_ks = service.geo2flug(gewichtsvektor_g_ks, 0.00799, -1.23e-5, 0.0433)
+    gewichtsvektor_f_ks = service.geo2flug(gewichtsvektor_g_ks, np.pi/2.0, 0, 0)
     print(gewichtsvektor_f_ks)
-
 
 if __name__ == '__main__':
     main()
