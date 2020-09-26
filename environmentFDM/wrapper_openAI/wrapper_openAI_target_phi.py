@@ -59,7 +59,7 @@ class WrapperOpenAI (gym.Env):
         self.anzahlEpisoden = 0
 
         self.servo_command = 0
-        self.action_servo_command_history = np.zeros(2)
+        self.action_servo_command_history = np.zeros(5)
         self.bandbreite_servo_actions = 0
 
     def reset(self):
@@ -67,7 +67,7 @@ class WrapperOpenAI (gym.Env):
         self.integration_error_stepsize_ = 0
 
         self.servo_command = 0
-        self.action_servo_command_history = np.zeros(2)
+        self.action_servo_command_history = np.zeros(5)
         self.bandbreite_servo_actions = 0
         self.anzahlSteps = 1
         self.anzahlEpisoden += 1
@@ -143,11 +143,11 @@ class WrapperOpenAI (gym.Env):
     def compute_reward(self, observation):
         reward = 0
         # exceeds bounds [-20, 20] -> -100
-        if np.rad2deg(observation[9]) > self.envelopeBounds['phiMax'] or np.rad2deg(observation[9]) < self.envelopeBounds['phiMax']:
+        if np.rad2deg(observation[9]) > 20 or np.rad2deg(observation[9]) < -20:
             reward += -1000
         # Abweichung abs(target-current) > 1 -> -1
         if np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi']) > 1:
-            reward += -1
+            reward += -5
         # Abweichung abs(target-current) <= 1 -> 10
         if np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi']) <= 1:
             reward += 10

@@ -37,7 +37,7 @@ class DatComGeometryC172Class(object):
         self.Sw = 16.2  # m2
         self.chord = 1.49352  # m
         self.span = 10.91184  # m
-        self.propellerRadius = 0.93  # m | siehe Flughandbuch
+        self.propellerRadius = 0.94  # m
 
         # Aerodynamic Data
         # Obtained with the referred methods
