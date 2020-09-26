@@ -4,6 +4,7 @@ sys.path.append('.')
 
 from FDM.geometryFDM.DatComGeometryBallClass import *
 from FDM.geometryFDM.DatComGeometryC172Class import *
+from FDM.geometryFDM.datComGeometry_beaver import DatComGeometry_beaver
 
 
 # keys are strings, values are classes
@@ -14,7 +15,8 @@ class Config(object):
 
         self.fehlererkennung = True
         self.icing = True
-        self.geometrieClass = "C172"
+        self.geometrieClass = "Beaver"
 
-        self.mappingDict = {"Ball" : DatComGeometryBallClass,
-                            "C172" : DatComGeometryC172Class}
+        self.mappingDict = {"Ball": DatComGeometryBallClass,
+                            "C172": DatComGeometryC172Class,
+                            "Beaver": DatComGeometry_beaver}
