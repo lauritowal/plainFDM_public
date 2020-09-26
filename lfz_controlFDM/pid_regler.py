@@ -5,10 +5,10 @@ import numpy as np
 class PidRegler(object):
 
     def __init__(self):
-        self.kpaElevator = 20
-        self.kdaElevator = 90
-        self.kpaAileron = 0.2
-        self.kdaAileron = 2.8
+        self.kpaElevator = 0.3
+        self.kdaElevator = 0.03
+        self.kpaAileron = 1.3
+        self.kdaAileron = 0.01
         
         
     # Headline: Aileron
@@ -24,9 +24,9 @@ class PidRegler(object):
     # innerLoop: heading_roll->Aileron
     def _innerLoopAileron(self, rollAngle_Reference, rollAngle_Current, rollAngleRateCurrent, AileronCurrent):
         diff_rollAngle = rollAngle_Reference - rollAngle_Current
-        AileronCommand = np.clip(diff_rollAngle * self.kpaAileron - rollAngleRateCurrent * self.kdaAileron, np.deg2rad(-15), np.deg2rad(20))
+        AileronCommand = np.clip(diff_rollAngle * self.kpaAileron - rollAngleRateCurrent * self.kdaAileron, -1, 1)
         AileronCommand = AileronCommand + AileronCurrent
-        AileronCommand = np.clip(AileronCommand, np.deg2rad(-15), np.deg2rad(20))
+        AileronCommand = np.clip(AileronCommand, -1, 1) * (-15)
         return AileronCommand
     
     # Headline: Elevator
@@ -42,9 +42,9 @@ class PidRegler(object):
     # innerLoop: Pitch->Elevator
     def _innerLoopElevator(self, pitchAngleReference, pitchAngleCurrent, pitchAngleRateCurrent, elevatorCurrent):
         diffPitchAngle = pitchAngleReference - pitchAngleCurrent
-        elevatorCommand = np.clip(diffPitchAngle * self.kpaElevator - pitchAngleRateCurrent * self.kdaElevator, np.deg2rad(-26), np.deg2rad(28))
+        elevatorCommand = np.clip(diffPitchAngle * self.kpaElevator - pitchAngleRateCurrent * self.kdaElevator, -1, 1)
         elevatorCommand = elevatorCommand + elevatorCurrent
-        elevatorCommand = np.clip(elevatorCommand, np.deg2rad(-26), np.deg2rad(28))
+        elevatorCommand = np.clip(elevatorCommand, -1, 1) * (-20)
         return elevatorCommand
 
 

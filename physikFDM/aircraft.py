@@ -207,7 +207,7 @@ class Aircraft(object):
         # Umdrehung fuehrt zu Kraft:
         # 1. Berechnung des Beiwerts
         # advance ratio J using the program JavaProp
-        J = (np.pi * self.TAS) / (self.motordrehzahlRadientProSekunde * self.geometry.propellerRadius)  # non-dimensional
+        J = (self.TAS) / (self.motordrehzahlRadientProSekunde * self.geometry.propellerRadius)  # non-dimensional
         self.Coeff_Thrust = np.interp(J, self.geometry.J_data, self.geometry.CThrust_data)  # non-dimensional -> Beiwert des Propellers
 
     def _calculate_aerodynamic_forces(self):
@@ -218,7 +218,7 @@ class Aircraft(object):
         lift_f_ks = self.umrechnungenKoordinaten.aero2flug([0, 0, -lift_a_ks], self.alpha, self.beta)
         drag_f_ks = self.umrechnungenKoordinaten.aero2flug([-drag_a_ks, 0, 0], self.alpha, self.beta)
         # Kräftenberechnung im g_ks
-        weightForce_g_ks = [0, 0, -self.geometry.mass * self.gravity]
+        weightForce_g_ks = [0, 0, self.geometry.mass * self.gravity]
         # conversion to f_ks
         weightForce_f_ks = self.umrechnungenKoordinaten.geo2flug(weightForce_g_ks, self.phi, self.theta, self.psi)
         #Fx, Fy, Fz im f_ks
