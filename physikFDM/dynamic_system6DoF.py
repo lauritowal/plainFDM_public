@@ -24,6 +24,7 @@ class DynamicSystem6DoF(object):
 
         u, v, w = state[0], state[1], state[2]
         p, q, r = state[6], state[7], state[8]
+        phi, theta, psi = state[9], state[10], state[11]
 
         # translation forces equations
         # Allerton S. 145
@@ -42,20 +43,21 @@ class DynamicSystem6DoF(object):
 
         # translation kinematic equations
         # siehe: S. 16 - https://www.nasa.gov/centers/dryden/pdf/88104main_H-1391.pdf
-        dx_dt = (np.cos(y[10]) * np.cos(y[11]) * y[0] +
-                 (np.sin(y[9]) * np.sin(y[10]) * np.cos(y[11]) - np.cos(y[9]) * np.sin(y[11])) * y[1] +
-                 (np.cos(y[9]) * np.sin(y[10]) * np.cos(y[11]) + np.sin(y[9]) * np.sin(y[11])) * y[2])
-        dy_dt = (np.cos(y[10]) * np.sin(y[11]) * y[0] +
-                 (np.sin(y[9]) * np.sin(y[10]) * np.sin(y[11]) + np.cos(y[9]) * np.cos(y[11])) * y[1] +
-                 (np.cos(y[9]) * np.sin(y[10]) * np.sin(y[11]) - np.sin(y[9]) * np.cos(y[11])) * y[2])
-        dz_dt = -y[0] * np.sin(y[10]) + y[1] * np.sin(y[9]) * np.cos(y[10]) + y[2] * np.cos(
-            y[9]) * np.cos(y[10])
+
+        dx_dt = (np.cos(theta) * np.cos(psi) * u +
+                 (np.sin(phi) * np.sin(theta) * np.cos(psi) - np.cos(phi) * np.sin(psi)) * v +
+                 (np.cos(phi) * np.sin(theta) * np.cos(psi) + np.sin(phi) * np.sin(psi)) * w)
+        dy_dt = (np.cos(theta) * np.sin(psi) * u +
+                 (np.sin(phi) * np.sin(theta) * np.sin(psi) + np.cos(phi) * np.cos(psi)) * v +
+                 (np.cos(phi) * np.sin(theta) * np.sin(psi) - np.sin(phi) * np.cos(psi)) * w)
+        dz_dt = -u * np.sin(theta) + v * np.sin(phi) * np.cos(theta) + w * np.cos(
+            phi) * np.cos(theta)
 
         # Angular Kinematic equations
         # Siehe Brockhaus S. 75
-        dphi_dt = p + (q * np.sin(y[9]) + r * np.cos(y[9])) * np.tan(y[10])
-        dtheta_dt = q * np.cos(y[9]) - r * np.sin(y[9])
-        dpsi_dt = (q * np.sin(y[9]) + r * np.cos(y[9])) / np.cos(y[10])
+        dtheta_dt = q * np.cos(phi) - r * np.sin(phi)
+        dphi_dt = p + (q * np.sin(phi) + r * np.cos(phi)) * np.tan(theta)
+        dpsi_dt = (q * np.sin(phi) + r * np.cos(phi)) / np.cos(theta)
 
         # ACHTUNG: Vielleicht falsch PHI, THETA, PSI
         return np.array([du_dt, dv_dt, dw_dt, dx_dt, dy_dt, dz_dt, dp_dt, dq_dt, dr_dt, dphi_dt, dtheta_dt,
