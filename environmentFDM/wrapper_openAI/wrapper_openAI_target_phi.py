@@ -158,16 +158,16 @@ class WrapperOpenAI (gym.Env):
     def check_done(self, observation):
         done = 0
         #conditions_if_reset =  all( [30 <= observation[0] <= 50, 30 <= observation[1] <= 50])
-        if observation[0] < 30 or observation[0] > 50:
+        if observation[0] < self.envelopeBounds['speedMin'] or observation[0] > self.envelopeBounds['speedMax']:
             print("speed limits")
             done = 1
         #conditions_if_reset_speed = any([observation[0] < 30, observation[0] > 50])
-        if self.envelopeBounds['phiMin'] > np.rad2deg(observation[9]) or np.rad2deg(observation[9]) > self.envelopeBounds['phiMax']:
+        if np.rad2deg(observation[9]) < self.envelopeBounds['phiMin'] or np.rad2deg(observation[9]) > self.envelopeBounds['phiMax']:
             print("roll limits", np.rad2deg(observation[9]))
             done = 1
-        #conditions_if_reset_phi = any([self.envelopeBounds['phiMin'] > np.rad2deg(observation[9]), np.rad2deg(observation[9]) > self.envelopeBounds['phiMax']])
-        if self.envelopeBounds['thetaMin'] > np.rad2deg(observation[10]) or np.rad2deg(observation[10]) > self.envelopeBounds['thetaMax']:
-            print("pitch limits")
+        # conditions_if_reset_phi = any([self.envelopeBounds['phiMin'] > np.rad2deg(observation[9]), np.rad2deg(observation[9]) > self.envelopeBounds['phiMax']])
+        if np.rad2deg(observation[10]) < self.envelopeBounds['thetaMin'] or np.rad2deg(observation[10]) > self.envelopeBounds['thetaMax']:
+            print("pitch limits", np.rad2deg(observation[10]))
             done = 1
         return done
 
