@@ -5,10 +5,10 @@ import numpy as np
 class PidRegler(object):
 
     def __init__(self):
-        self.kpaElevator = 0.3
-        self.kdaElevator = 0.03
-        self.kpaAileron = 1.3
-        self.kdaAileron = 0.01
+        self.kpaElevator = 97
+        self.kdaElevator = 4.5
+        self.kpaAileron = 100.0
+        self.kdaAileron = 10
         
         
     # Headline: Aileron
@@ -26,7 +26,7 @@ class PidRegler(object):
         diff_rollAngle = rollAngle_Reference - rollAngle_Current
         AileronCommand = np.clip(diff_rollAngle * self.kpaAileron - rollAngleRateCurrent * self.kdaAileron, -1, 1)
         AileronCommand = AileronCommand + AileronCurrent
-        AileronCommand = np.clip(AileronCommand, -1, 1) * (-15)
+        AileronCommand = np.deg2rad(np.clip(AileronCommand, -1, 1) * (-15))
         return AileronCommand
     
     # Headline: Elevator
@@ -44,7 +44,7 @@ class PidRegler(object):
         diffPitchAngle = pitchAngleReference - pitchAngleCurrent
         elevatorCommand = np.clip(diffPitchAngle * self.kpaElevator - pitchAngleRateCurrent * self.kdaElevator, -1, 1)
         elevatorCommand = elevatorCommand + elevatorCurrent
-        elevatorCommand = np.clip(elevatorCommand, -1, 1) * (-20)
+        elevatorCommand = np.deg2rad(np.clip(elevatorCommand, -1, 1) * (-20))
         return elevatorCommand
 
 

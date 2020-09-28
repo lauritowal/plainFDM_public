@@ -15,6 +15,8 @@ from FDM.servicesFDM.plot_state import PlotState
 from FDM.servicesFDM.umrechnungen_koordinaten import UmrechnungenKoordinaten
 config = Config()
 
+from FDM.physikFDM.aircraft_beaver import Aircraft_baever
+
 
 class WrapperOpenAI (gym.Env):
     """Custom Environment that follows gym interface"""
@@ -33,7 +35,8 @@ class WrapperOpenAI (gym.Env):
         # reward
         self.reward_range = np.array([-np.inf, np.inf], dtype=np.float32)
         # spezielle Parameter für das Enviroment FDM
-        self.aircraft = Aircraft(config.geometrieClass)  # Ball oder C172
+        #self.aircraft = Aircraft(config.geometrieClass)  # Ball oder C172
+        self.aircraft = Aircraft_baever()
         self.pid = PidRegler()
         self.dynamicSystem = DynamicSystem6DoF()
         self.umrechnungenKoordinaten = UmrechnungenKoordinaten()
@@ -47,10 +50,10 @@ class WrapperOpenAI (gym.Env):
                              'target_z_dot': 0.0}
         self.envelopeBounds = {'phiMax': 20,
                                'phiMin': -20,
-                               'thetaMax': 30,
-                               'thetaMin': -30,
+                               'thetaMax': 20,
+                               'thetaMin': -20,
                                'speedMax': 80,
-                               'speedMin': 30
+                               'speedMin': 33
                                }
 
         self.observationErrorAkkumulation_for_u = np.zeros(3)
@@ -85,19 +88,13 @@ class WrapperOpenAI (gym.Env):
         self.anzahlSteps += 1
 
         self.servo_command_elevator = action_command[0]
-        set_elevator = np.interp(self.servo_command_elevator, [-1, 1],
-                                 self.aircraft.SteuerflaechenUndMotorStellung.controlLimits['deltaElevatorBorder'])
-        self.aircraft.SteuerflaechenUndMotorStellung.deltaElevator = set_elevator
+        self.aircraft.delta_elevator = np.deg2rad(np.clip(self.servo_command_elevator, -1, 1) * (-20))  # im FDM Beaver ist das
 
         self.servo_command_thrust = action_command[1]
-        set_thrust = np.interp(self.servo_command_thrust, [-1, 1],
-                               self.aircraft.SteuerflaechenUndMotorStellung.controlLimits['deltaThrustBorder'])
-        self.aircraft.SteuerflaechenUndMotorStellung.deltaThrust = set_thrust
+        self.aircraft.delta_thrust = np.interp(self.servo_command_thrust, [-1, 1], [0, 1])
 
         # Headline: phi wird mit PID-Regler stabilisiert
-        set_aileron = self.pid._innerLoopAileron(0, np.rad2deg(self.aircraft.phi), self.aircraft.p,
-                                                 self.aircraft.SteuerflaechenUndMotorStellung.deltaAileron)
-        self.aircraft.SteuerflaechenUndMotorStellung.deltaAileron = set_aileron
+        self.aircraft.delta_aileron = self.pid._innerLoopAileron(np.deg2rad(0), self.aircraft.phi, self.aircraft.p, self.aircraft.delta_aileron)
         # Headline: integrate step
         solver = self.dynamicSystem.integrate(self.aircraft.getState(), self.aircraft.getForces(),
                                               self.aircraft.getMoments(),
@@ -117,7 +114,7 @@ class WrapperOpenAI (gym.Env):
         self.plotter.addData(self.aircraft.getState(), self.aircraft.getForces(), self.aircraft.getMoments(),
                              self.aircraft.alpha, self.aircraft.beta,
                              np.rad2deg(
-                                 self.aircraft.SteuerflaechenUndMotorStellung.getSteuerflaechenUndMotorStellung()),
+                                 self.aircraft.getSteuerflaechenUndMotorStellung()),
                              self.anzahlSteps + self.anzahlEpisoden * 1000)  # Headline ist anzupassen
         self.plotter.add_data_xyz([self.aircraft.x_geo, self.aircraft.y_geo, self.aircraft.z_geo], self.aircraft.z_dot_g_ks, self.anzahlSteps + self.anzahlEpisoden * 1000)
 
@@ -160,22 +157,15 @@ class WrapperOpenAI (gym.Env):
         reward = 0
         # exceeds bounds [-20, 20] -> -100
         if current_u < self.envelopeBounds['speedMin'] or current_u > self.envelopeBounds['speedMax']:
-            reward += -1000
+            reward += -5000
         if np.rad2deg(current_theta) < self.envelopeBounds['thetaMin'] or np.rad2deg(current_theta) > self.envelopeBounds['thetaMax']:
-            reward += -1000
+            reward += -5000
         # Abweichung abs(target-current) > 1 -> -1
-        if np.abs(current_u - self.targetValues['targetSpeed']) > 1:
-            reward += -1 * np.abs(current_u - self.targetValues['targetSpeed'])
+        if np.abs(current_u - self.targetValues['targetSpeed']) > 1 or np.abs(current_z_dot - self.targetValues['target_z_dot']) > 1:
+            reward += -1 * ( np.abs(current_u - self.targetValues['targetSpeed']) + np.abs(current_z_dot - self.targetValues['target_z_dot']) )
         # Abweichung abs(target-current) <= 1 -> 10
-        if np.abs(current_u - self.targetValues['targetSpeed']) <= 1:
+        if np.abs(current_u - self.targetValues['targetSpeed']) <= 1 and np.abs(current_z_dot - self.targetValues['target_z_dot']) <= 1:
             reward += 10
-        # Abweichung abs(target-current) > 1 -> -1
-        if np.abs(current_z_dot - self.targetValues['target_z_dot']) > 1:
-            reward += -1 * np.abs(current_u - self.targetValues['target_z_dot'])
-        # Abweichung abs(target-current) <= 1 -> 10
-        if np.abs(current_z_dot - self.targetValues['target_z_dot']) <= 1:
-            reward += 10
-        #reward += -0.01 * np.power((1 * self.action_servo_command_history[0] - 1 * self.action_servo_command_history[1]), 2)
         return reward
 
     def check_done(self, observation):

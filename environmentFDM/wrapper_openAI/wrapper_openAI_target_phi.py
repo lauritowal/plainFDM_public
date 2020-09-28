@@ -6,7 +6,7 @@ import sys
 sys.path.append('..')
 sys.path.append('.')
 
-from FDM.physikFDM.aircraft import Aircraft
+from FDM.physikFDM.aircraft_beaver import Aircraft_baever
 from FDM.lfz_controlFDM.pid_regler import PidRegler
 from FDM.physikFDM.dynamic_system6DoF import DynamicSystem6DoF
 from FDM.config import Config
@@ -33,7 +33,7 @@ class WrapperOpenAI (gym.Env):
         # reward
         self.reward_range = np.array([-np.inf, np.inf], dtype=np.float32)
         # spezielle Parameter für das Enviroment FDM
-        self.aircraft = Aircraft(config.geometrieClass)  # Ball oder C172
+        self.aircraft = Aircraft_baever()  # Ball oder C172
         self.pid = PidRegler()
         self.dynamicSystem = DynamicSystem6DoF()
         self.stepweite = stepweite
@@ -84,12 +84,9 @@ class WrapperOpenAI (gym.Env):
         # action im Intervall [-1,1]
         # mapping auf Begrenzung der Steuerflächen
         self.servo_command = actionAileron[0]
-        set_aileron = np.interp(actionAileron[0], [-1, 1], self.aircraft.SteuerflaechenUndMotorStellung.controlLimits['deltaAileronBorder'])
-        #print(set_aileron)
-        self.aircraft.SteuerflaechenUndMotorStellung.deltaAileron = set_aileron
+        self.aircraft.delta_aileron = np.deg2rad(np.clip(self.servo_command, -1, 1) * (-15))  # im FDM Beaver ist das
         # Headline: pitch wird mit PID-Regler stabilisiert
-        set_elevator = self.pid._innerLoopElevator(-1, np.rad2deg(self.aircraft.theta), self.aircraft.q, self.aircraft.SteuerflaechenUndMotorStellung.deltaElevator)
-        self.aircraft.SteuerflaechenUndMotorStellung.deltaElevator = set_elevator
+        self.aircraft.delta_elevator = self.pid._innerLoopElevator(np.deg2rad(0), self.aircraft.theta, self.aircraft.q, self.aircraft.delta_elevator)
         # Headline: integrate step
         solver = self.dynamicSystem.integrate(self.aircraft.getState(), self.aircraft.getForces(), self.aircraft.getMoments(),
                                          self.aircraft.mass, self.aircraft.inertia,
@@ -143,7 +140,7 @@ class WrapperOpenAI (gym.Env):
     def compute_reward(self, observation):
         reward = 0
         # exceeds bounds [-20, 20] -> -100
-        if np.rad2deg(observation[9]) > self.envelopeBounds['phiMax'] or np.rad2deg(observation[9]) < self.envelopeBounds['phiMax']:
+        if np.rad2deg(observation[9]) > self.envelopeBounds['phiMax'] or np.rad2deg(observation[9]) < self.envelopeBounds['phiMin']:
             reward += -1000
         # Abweichung abs(target-current) > 1 -> -1
         if np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi']) > 1:
