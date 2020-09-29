@@ -100,7 +100,7 @@ class WrapperOpenAI (gym.Env):
         done = self.check_done(self.aircraft.getState())
         # Headline: ab hier für plotten
         self.plotter.addData(self.aircraft.getState(), self.aircraft.getForces(), self.aircraft.getMoments(), self.aircraft.alpha, self.aircraft.beta,
-                        np.rad2deg(self.aircraft.SteuerflaechenUndMotorStellung.getSteuerflaechenUndMotorStellung()),
+                        np.rad2deg(self.aircraft.getSteuerflaechenUndMotorStellung()),
                         self.anzahlSteps + self.anzahlEpisoden * 400)  #Headline ist anzupassen
         self.plotter.add_data_Ziel(self.targetValues['targetPhi'], self.anzahlSteps + self.anzahlEpisoden * 400)
 
