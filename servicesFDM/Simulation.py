@@ -33,7 +33,7 @@ start = time.time()
 
 #todo: echtzeitanpassung über time und pause...
 stepweite = 0.05
-steps = 3000
+steps = 2000
 # set initial conditions of a/c
 aircraft.setState([40., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
 for step in range(steps):
@@ -53,11 +53,11 @@ for step in range(steps):
     #send Position and angle to Unity
     udpClient.send((struct.pack('fff', aircraft.phi, aircraft.theta, 0)))
     # Headline: PID-Regler
-    aircraft.SteuerflaechenUndMotorStellung.deltaElevator = pid._innerLoopElevator(np.deg2rad(5), aircraft.theta, aircraft.q, np.deg2rad(aircraft.SteuerflaechenUndMotorStellung.deltaElevator))
-    aircraft.SteuerflaechenUndMotorStellung.deltaAileron = pid._innerLoopAileron((0), aircraft.phi, aircraft.p, np.deg2rad(aircraft.SteuerflaechenUndMotorStellung.deltaAileron))
-    aircraft.SteuerflaechenUndMotorStellung.deltaThrust = 0.0
+    aircraft.delta_aileron = pid._innerLoopAileron(np.deg2rad(0), aircraft.phi, aircraft.p, aircraft.delta_aileron)
+    aircraft.delta_elevator = pid._innerLoopElevator(np.deg2rad(10), aircraft.theta, aircraft.q, aircraft.delta_elevator)
+    aircraft.delta_thrust = 0.0
     # Headline: ab hier für plotten
-    plotter.addData(aircraft.getState(), aircraft.getForces(), aircraft.getMoments(), aircraft.alpha, aircraft.beta, np.rad2deg(aircraft.SteuerflaechenUndMotorStellung.getSteuerflaechenUndMotorStellung()), step)
+    plotter.addData(aircraft.getState(), aircraft.getForces(), aircraft.getMoments(), aircraft.alpha, aircraft.beta, np.rad2deg(aircraft.getSteuerflaechenUndMotorStellung()), step)
     plotter.add_data_xyz([aircraft.x_geo, aircraft.y_geo, aircraft.z_geo], z_dot_g_ks, step)
     if step % 1000 == 0:
         print("dfghj")

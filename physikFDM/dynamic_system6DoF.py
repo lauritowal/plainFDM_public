@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp, ode
 
 #Euler Flat Earth
 class DynamicSystem6DoF(object):

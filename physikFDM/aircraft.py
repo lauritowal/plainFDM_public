@@ -7,7 +7,6 @@ from scipy.interpolate import RectBivariateSpline
 
 from FDM.config import Config
 from FDM.servicesFDM.umrechnungen_koordinaten import UmrechnungenKoordinaten
-from FDM.physikFDM.steuerflaechen_motor_stellung import SteuerflaechenUndMotorStellung
 
 
 class Aircraft(object):
@@ -17,7 +16,6 @@ class Aircraft(object):
         geometrieClass = self.config.mappingDict[DatComClass] #welche Geometrie/DatCom Klasse wird benutzt
         self.geometry = geometrieClass()
         self.umrechnungenKoordinaten = UmrechnungenKoordinaten()  #todo: nicht als self, sondern als extra Dienst
-        self.SteuerflaechenUndMotorStellung = SteuerflaechenUndMotorStellung()
 
         # Ziel: ist die Flugbahngleichung
         #todo: prüfen ob der state in ein Dictonary soll
@@ -77,6 +75,13 @@ class Aircraft(object):
         self.total_forces_f_ks = np.zeros(3)
         self.total_moments_f_ks = np.zeros(3)
 
+        self.delta_elevator = 0
+        self.delta_aileron = 0
+        self.delta_rudder = 0
+        self.delta_thrust = 0
+
+    def getSteuerflaechenUndMotorStellung(self):
+        return [self.delta_elevator, self.delta_aileron, self.delta_rudder, self.delta_thrust]
 
     def getState(self):
         #([u,v,w,x,y,z,p,q,r,theta,phi,psi])

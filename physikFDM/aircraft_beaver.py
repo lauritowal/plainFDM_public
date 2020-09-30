@@ -1,14 +1,12 @@
 import numpy as np
 from FDM.config import Config
 from FDM.geometryFDM.datComGeometry_beaver import DatComGeometry_beaver
-from FDM.physikFDM.steuerflaechen_motor_stellung import SteuerflaechenUndMotorStellung
 from FDM.servicesFDM.umrechnungen_koordinaten import UmrechnungenKoordinaten
 
 class Aircraft_baever(object):
 
     def __init__(self):
         self.geometry = DatComGeometry_beaver()
-        self.SteuerflaechenUndMotorStellung = SteuerflaechenUndMotorStellung()
         self.umrechnungenKoordinaten = UmrechnungenKoordinaten()
 
         # Ziel: ist die Flugbahngleichung
@@ -62,6 +60,14 @@ class Aircraft_baever(object):
         self.y_dot_g_ks = 0
         self.z_dot_g_ks = 0
 
+        self.delta_elevator = 0
+        self.delta_aileron = 0
+        self.delta_rudder = 0
+        self.delta_thrust = 0
+
+    def getSteuerflaechenUndMotorStellung(self):
+        return [self.delta_elevator, self.delta_aileron, self.delta_rudder, self.delta_thrust]
+
     def getState(self):
         # ([u,v,w,x,y,z,p,q,r,theta,phi,psi])
         self.state = np.array(
@@ -85,6 +91,7 @@ class Aircraft_baever(object):
         self.state = stateInput
 
     def getForces(self):
+        # todo: splitten der Coeff bzgl des KS. aero liegen im a_ks, engine im f_ks
         coeff_aerodynamics = np.array([self._calculate_aero_alpha_beta_coeffs(), self._calculate_steuerfleachen_coeffs(), self._calculate_body_dumping_coeffs()]).sum(axis=0)
         coeff_engine = self._calculate_engine_coeffs()
         self.coeff_body = np.array([coeff_aerodynamics, coeff_engine]).sum(axis=0)  # xyz-body; lmn-body
@@ -133,9 +140,9 @@ class Aircraft_baever(object):
         alpha = self.alpha
         beta = self.beta
         beta2 = beta ** 2
-        deltaElevator = self.SteuerflaechenUndMotorStellung.deltaElevator  # rad
-        deltaAileron = self.SteuerflaechenUndMotorStellung.deltaAileron  # rad
-        deltaRudder = self.SteuerflaechenUndMotorStellung.deltaRudder  # rad
+        deltaElevator = self.delta_elevator  # rad
+        deltaAileron = self.delta_aileron  # rad
+        deltaRudder = self.delta_rudder  # rad
 
         # Aileron:
         cx = deltaAileron * 0.0
@@ -217,7 +224,7 @@ class Aircraft_baever(object):
 
 
     def _calculate_engine_coeffs(self):
-        deltaThrottle = self.SteuerflaechenUndMotorStellung.deltaThrust
+        deltaThrottle = self.delta_thrust
         # 1 und 2 entspricht uprop in matlab DeHavilland
         # 1. deltaThrottle2RPM
         motordrehzahl = np.interp(deltaThrottle, self.geometry.stellbereichThrust, self.geometry.rpmMotor)  # rpm
@@ -225,7 +232,7 @@ class Aircraft_baever(object):
         manifold = np.interp(motordrehzahl, self.geometry.rpmMotor, self.geometry.manifold)  # rpm
         dpt = 2 / self.TAS**3 / self.rho * (((manifold + 7.4) * (motordrehzahl + 2010)) * 0.00412 + ((408.0 - 0.0965 * motordrehzahl) * (1.0 - self.rho/1.225) - 326.5)) * 0.7355 * 191.18 + 0.08696
 
-        cx = dpt * self.geometry.cx_dpt + dpt**2 * self.alpha * self.geometry.cx_dpt2_alpha
+        cx = dpt * self.geometry.cx_dpt + dpt**2 * self.alpha * self.geometry.cx_dpt2_alpha * 3  # Headline: Faktor 3 durch RT
         cy = 0
         cz = dpt * self.geometry.cz_dpt
 
