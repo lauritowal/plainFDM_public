@@ -34,9 +34,9 @@ class Aircraft_baever(object):
         self.theta = 0.0873  # rad
         self.psi = 0.142  # rad
 
-        self.alpha = 0.208  # Deg
-        self.alphaDot = 0.1e-10
-        self.beta = -0.0107
+        self.alpha = 0.0  # Deg
+        self.alphaDot = 0.0
+        self.beta = 0.0
         self.TAS = 42.7
         self.mass = self.geometry.mass
         self.inertia = self.geometry.inertia
@@ -218,7 +218,7 @@ class Aircraft_baever(object):
 
         coeff_body_dumping_r = np.array([cx, cy, cz, cl, cm, cn]) * self.r * self.geometry.span / 2
 
-        coeff_body_dumping = np.array([coeff_body_dumping_p, coeff_body_dumping_q, coeff_body_dumping_r]).sum(axis=0) / self.TAS
+        coeff_body_dumping = (np.array([coeff_body_dumping_p, coeff_body_dumping_q, coeff_body_dumping_r]).sum(axis=0)) / self.TAS
 
         return coeff_body_dumping
 
@@ -230,15 +230,15 @@ class Aircraft_baever(object):
         motordrehzahl = np.interp(deltaThrottle, self.geometry.stellbereichThrust, self.geometry.rpmMotor)  # rpm
         # 2. RPM to Manifold
         manifold = np.interp(motordrehzahl, self.geometry.rpmMotor, self.geometry.manifold)  # rpm
-        dpt = 2 / self.TAS**3 / self.rho * (((manifold + 7.4) * (motordrehzahl + 2010)) * 0.00412 + ((408.0 - 0.0965 * motordrehzahl) * (1.0 - self.rho/1.225) - 326.5)) * 0.7355 * 191.18 + 0.08696
+        dpt = ((2 / (self.TAS**3)) / self.rho) * (((((manifold + 7.4) * (motordrehzahl + 2010)) * 0.00412) + ((408.0 - 0.0965 * motordrehzahl) * (1.0 - self.rho/1.225) - 326.5)) * 0.7355) * 191.18 + 0.08696
 
-        cx = dpt * self.geometry.cx_dpt + dpt**2 * self.alpha * self.geometry.cx_dpt2_alpha * 3  # Headline: Faktor 3 durch RT
+        cx = dpt * self.geometry.cx_dpt + dpt*dpt * self.alpha * self.geometry.cx_dpt2_alpha * 1  # Headline: Faktor 3 durch RT
         cy = 0
         cz = dpt * self.geometry.cz_dpt
 
-        cl = dpt * self.alpha**2 * self.geometry.cl_dpt_alpha2
-        cm = dpt * self.geometry.cm_dpt
-        cn = dpt**3 * self.geometry.cn_dpt3
+        cl = 0 #dpt * self.alpha**2 * self.geometry.cl_dpt_alpha2
+        cm = 0 #dpt * self.geometry.cm_dpt
+        cn = 0 #dpt**3 * self.geometry.cn_dpt3
 
         coeff_engine = np.array([cx, cy, cz, cl, cm, cn])
 

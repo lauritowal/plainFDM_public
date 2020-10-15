@@ -5,7 +5,7 @@ import numpy as np
 class PidRegler(object):
 
     def __init__(self):
-        self.kpaElevator = 97
+        self.kpaElevator = 110
         self.kdaElevator = 4.5
         self.kpaAileron = 100.0
         self.kdaAileron = 10
@@ -24,7 +24,9 @@ class PidRegler(object):
     # innerLoop: heading_roll->Aileron
     def _innerLoopAileron(self, rollAngle_Reference, rollAngle_Current, rollAngleRateCurrent, AileronCurrent):
         diff_rollAngle = rollAngle_Reference - rollAngle_Current
-        AileronCommand = np.clip(diff_rollAngle * self.kpaAileron - rollAngleRateCurrent * self.kdaAileron, -1, 1)
+        #if np.rad2deg(rollAngle_Current) < -2:
+        #    print("jetzt")
+        AileronCommand = (diff_rollAngle * self.kpaAileron - rollAngleRateCurrent * self.kdaAileron)
         AileronCommand = AileronCommand + AileronCurrent
         AileronCommand = np.deg2rad(np.clip(AileronCommand, -1, 1) * (-15))
         return AileronCommand

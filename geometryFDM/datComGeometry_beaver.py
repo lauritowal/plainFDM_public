@@ -78,7 +78,7 @@ class DatComGeometry_beaver(object):
         # trottle to RPM
         # todo: besser = Leerlauf
         self.stellbereichThrust = np.array([0.0, 0.16666, 0.3333, 0.5, 0.66666, 0.83333, 1.0])
-        self.rpmMotor = np.array([-0.03457, 35.0, 269.0, 1149.0, 2030.0, 2264.0, 2300.0])  # min RPM & max RPM
+        self.rpmMotor = np.array([0.0, 35.0, 269.0, 1149.0, 2030.0, 2264.0, 2300.0])  # min RPM & max RPM
         self.manifold = np.array([0, 0.4, 3.0, 13.0, 22.5735, 25.7, 26])
 
         # dpt

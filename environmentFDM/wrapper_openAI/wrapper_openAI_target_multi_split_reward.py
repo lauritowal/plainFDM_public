@@ -68,6 +68,7 @@ class WrapperOpenAI (gym.Env):
         self.anzahlEpisoden = 0
 
     def reset(self):
+        np.random.seed = 42
         self.error_array_u = np.zeros(self.integration_stepsize)
         self.integration_error_u = 0
         self.error_array_theta = np.zeros(self.integration_stepsize)
@@ -77,8 +78,8 @@ class WrapperOpenAI (gym.Env):
         self.anzahlEpisoden += 1
 
         # set targets
-        self.targetValues['targetSpeed'] = np.random.uniform(45, 55)  # m/s
-        self.targetValues['targetTheta'] = np.random.uniform(-5, 5)  # m/s
+        self.targetValues['targetSpeed'] = np.random.uniform(48, 52)  # m/s
+        self.targetValues['target_z_dot'] = np.random.uniform(0, 0)  # m/s
         print('new Targets: ', self.targetValues)
 
         # set state at initial
@@ -152,24 +153,25 @@ class WrapperOpenAI (gym.Env):
 
         user_defined_observation = np.asarray(
             [current_u, current_u_to_target_u,
-             current_theta_rad, current_theta_dot, current_theta_to_target_theta_rad])
+             current_theta_rad, current_theta_dot, z_dot_g_ks])
 
         return user_defined_observation
 
     def compute_reward(self, aircraft_state_f_ks, z_dot_g_ks):
         reward0 = self.reward_elevator(aircraft_state_f_ks, z_dot_g_ks)
         reward1 = self.reward_thrust(aircraft_state_f_ks, z_dot_g_ks)
-        return reward0 + reward1
+        return reward0, reward1
 
     def reward_elevator(self, aircraft_state_f_ks, z_dot_g_ks):
         current_theta_grad = np.rad2deg(aircraft_state_f_ks[10])
+        z_dot = z_dot_g_ks
         reward0 = 0
+        # out of bounds
         if current_theta_grad < self.envelopeBounds['thetaMin'] or current_theta_grad > self.envelopeBounds['thetaMax']:
             reward0 += -1000
-        if np.abs(current_theta_grad - self.targetValues['targetTheta']) > 1:
-            reward0 += -1 * np.abs(current_theta_grad - self.targetValues['targetTheta'])
-        if np.abs(current_theta_grad - self.targetValues['targetTheta']) <= 1:
-            reward0 += 0
+        # Zielgröße Sinken/steigen
+        if np.abs(z_dot - self.targetValues['target_z_dot']) > 1:
+            reward0 += -0.11 * np.abs(z_dot_g_ks - self.targetValues['target_z_dot'])
         return reward0
 
     def reward_thrust(self, aircraft_state_f_ks, z_dot_g_ks):
@@ -179,8 +181,6 @@ class WrapperOpenAI (gym.Env):
             reward1 += -1000
         if np.abs(current_u - self.targetValues['targetSpeed']) > 1:
             reward1 += -0.1 * np.abs(current_u - self.targetValues['targetSpeed'])
-        if np.abs(current_u - self.targetValues['targetSpeed']) <= 1:
-            reward1 += 0
         return reward1
 
     def check_done(self, observation):

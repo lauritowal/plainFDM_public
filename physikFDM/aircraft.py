@@ -134,7 +134,7 @@ class Aircraft(object):
         self.Sw = self.geometry.Sw
         #Preparation:
         alphaDegree = np.rad2deg(self.alpha)
-        deltaElevator = np.rad2deg(self.SteuerflaechenUndMotorStellung.deltaElevator)  # deg
+        deltaElevator = np.rad2deg(self.delta_elevator)  # deg
 
         Coeff_Lift_alpha = np.interp(alphaDegree, self.geometry.alpha_data, self.geometry.Coeff_Lift_data)
         Coeff_Lift_alphaDot = np.interp(alphaDegree, self.geometry.alpha_data, self.geometry.Coeff_Lift_alphadot_data)
@@ -164,8 +164,8 @@ class Aircraft(object):
     def _calculate_aerodynamic_lateral_coeffs(self):
         #berechnet: Cq, CL, CN -> Querkraft und Momente um die x-, z-Achse
         alphaDegree = np.rad2deg(self.alpha) #deg
-        deltaAileronDegree = np.rad2deg(self.SteuerflaechenUndMotorStellung.deltaAileron)  # deg
-        deltaRudderRadient = self.SteuerflaechenUndMotorStellung.deltaRudder # rad
+        deltaAileronDegree = np.rad2deg(self.delta_aileron)  # deg
+        deltaRudderRadient = self.delta_rudder # rad
         #todo: das war vorher cq... ist das falsch und wo wird das verwendet
         Coeff_SideForce_beta = np.interp(alphaDegree, self.geometry.alpha_data, self.geometry.Coeff_SideForce_beta_data)
         Coeff_SideForce_p = np.interp(alphaDegree, self.geometry.alpha_data, self.geometry.Coeff_SideForce_p_data)
@@ -204,7 +204,7 @@ class Aircraft(object):
 
 
     def _calculate_engine_coeffs(self):
-        deltaThrust = self.SteuerflaechenUndMotorStellung.deltaThrust
+        deltaThrust = self.delta_thrust
         # linearer Zusammenhang zwischen Drehzahl und Kraft
         motordrehzahl = np.interp(deltaThrust, self.geometry.stellbereichThrust, self.geometry.rpmMotor)  # rpm
         #todo: warum: motordrehzahl * 2

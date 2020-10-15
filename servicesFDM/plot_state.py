@@ -49,7 +49,7 @@ class PlotState(object):
 
         for items in listData2Plot:
             p.line(self.df[items].index.values, self.df[items], name=items, legend_label=items, line_width=2, color=next(colors))
-        #p.line(self.df_target['target'].index.values, self.df_target['target'], legend_label="target", name="target")
+        p.line(self.df_target['target'].index.values, self.df_target['target'], legend_label="target", name="target")
         #p.line(self.df_xyz['z'].index.values, self.df_xyz['z'], line_width=2, legend_label="z_g_ks", name="z_g_ks")
         p.line(self.df_xyz['z_dot_g_ks'].index.values, self.df_xyz['z_dot_g_ks'], line_width=2, legend_label="z_dot_g_ks", name="z_dot_g_ks", color="red")
         save(p)

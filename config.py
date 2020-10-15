@@ -15,7 +15,7 @@ class Config(object):
 
         self.fehlererkennung = True
         self.icing = True
-        self.geometrieClass = "Beaver"
+        self.geometrieClass = "C172"
 
         self.mappingDict = {"Ball": DatComGeometryBallClass,
                             "C172": DatComGeometryC172Class,
