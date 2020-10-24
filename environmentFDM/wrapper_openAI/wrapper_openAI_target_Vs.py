@@ -52,7 +52,7 @@ class WrapperOpenAI (gym.Env):
                                'phiMin': -20,
                                'thetaMax_grad': 14,
                                'thetaMin_grad': -30,
-                               'speedMax': 80,
+                               'speedMax': 72,
                                'speedMin': 33
                                }
 
@@ -67,7 +67,6 @@ class WrapperOpenAI (gym.Env):
 
     def reset(self):
         np.random.seed = 42
-
         self.servo_command = 0
         self.action_servo_command_history = np.zeros(2)
         self.bandbreite_servo_actions = 0
@@ -97,7 +96,7 @@ class WrapperOpenAI (gym.Env):
 
         # Headline: phi wird mit PID-Regler stabilisiert
         self.aircraft_beaver.delta_aileron = self.pid._innerLoopAileron(np.deg2rad(0), self.aircraft_beaver.phi, self.aircraft_beaver.p, self.aircraft_beaver.delta_aileron)
-        self.aircraft_beaver.delta_thrust = 0.5
+        self.aircraft_beaver.delta_thrust = 0.8
         # Headline: integrate step
         solver = self.dynamicSystem.integrate(self.aircraft_beaver.getState(), self.aircraft_beaver.getForces(),
                                               self.aircraft_beaver.getMoments(),
@@ -167,7 +166,7 @@ class WrapperOpenAI (gym.Env):
         if current_u < self.envelopeBounds['speedMin'] or current_u > self.envelopeBounds['speedMax']:
             reward0 += -1000
         # Zielgröße Sinken/steigen
-        if not 4 > z_dot_g_ks >= 3:
+        if not 0.5 > z_dot_g_ks >= -0.5:
             reward0 += -1
         else:
             reward0 += 10

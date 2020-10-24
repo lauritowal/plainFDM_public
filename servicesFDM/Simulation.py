@@ -55,7 +55,7 @@ for step in range(steps):
     # Headline: PID-Regler
     aircraft.delta_aileron = pid._innerLoopAileron(np.deg2rad(0), aircraft.phi, aircraft.p, aircraft.delta_aileron)
     aircraft.delta_elevator = pid._innerLoopElevator(np.deg2rad(20), aircraft.theta, aircraft.q, aircraft.delta_elevator)
-    aircraft.delta_thrust = 0.63
+    aircraft.delta_thrust = 1.0
     # Headline: ab hier für plotten
     plotter.addData(aircraft.getState(), aircraft.getForces(), aircraft.getMoments(), aircraft.alpha, aircraft.beta, aircraft.getSteuerflaechenUndMotorStellung(), step)
     plotter.add_data_xyz([aircraft.x_geo, aircraft.y_geo, aircraft.z_geo], z_dot_g_ks, step)
@@ -68,7 +68,7 @@ print('runtime: {:5.3f}s'.format(ende-start))
 #zeitmessung für develop
 
 #plotten
-listData2Plot = ['theta/grad', 'deltaElevator', 'phi/grad', 'deltaAileron', 'u']  #['u', 'v', 'w', 'x', 'y', 'z', 'p', 'q', 'r', 'phi/grad', 'theta/grad', 'psi/grad', 'forceX', 'forceY', 'forceZ', 'momentsX', 'momentsY', 'momentsZ', 'alpha','beta', 'deltaElevator', 'deltaAileron', 'deltaRudder', 'deltaThrust','tVerlauf']
+listData2Plot = ['theta/grad', 'deltaElevator', 'phi/grad', 'deltaThrust', 'u']  #['u', 'v', 'w', 'x', 'y', 'z', 'p', 'q', 'r', 'phi/grad', 'theta/grad', 'psi/grad', 'forceX', 'forceY', 'forceZ', 'momentsX', 'momentsY', 'momentsZ', 'alpha','beta', 'deltaElevator', 'deltaAileron', 'deltaRudder', 'deltaThrust','tVerlauf']
 plotter.plot(listData2Plot)
 
 
