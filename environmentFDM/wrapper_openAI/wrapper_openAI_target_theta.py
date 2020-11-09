@@ -39,13 +39,17 @@ class WrapperOpenAI (gym.Env):
         self.stepweite = stepweite
         self.udpClient = UdpClient('127.0.0.1', 5566)
         # frage: ist das die richtige Stelle, oder besser im DDPG-Controller
-        self.targetValues = {'targetPhi': 0,
-                             'targetTheta': 0,
-                             'targetPsi': 0}
+        self.targetValues = {'targetPhi_grad': 0,
+                             'targetTheta_grad': 0,
+                             'targetPsi': 0,
+                             'targetSpeed': 0,
+                             'target_z_dot': 0.0}
         self.envelopeBounds = {'phiMax': 20,
                                'phiMin': -20,
-                               'thetaMax': 30,
-                               'thetaMin': -30
+                               'thetaMax_grad': 30,
+                               'thetaMin_grad': -30,
+                               'speedMax': 72,
+                               'speedMin': 33
                                }
 
         self.observationErrorAkkumulation = np.zeros(3)
@@ -160,16 +164,18 @@ class WrapperOpenAI (gym.Env):
 
     def check_done(self, observation):
         done = 0
-        #conditions_if_reset =  all( [30 <= observation[0] <= 50, 30 <= observation[1] <= 50])
-        if observation[0] < 30 or observation[0] > 50:
-            print("speed limits")
+        # conditions_if_reset =  all( [30 <= observation[0] <= 50, 30 <= observation[1] <= 50])
+        if observation[0] < self.envelopeBounds['speedMin'] or observation[0] > self.envelopeBounds['speedMax']:
+            print("speed limits", observation[0])
             done = 1
-        #conditions_if_reset_speed = any([observation[0] < 30, observation[0] > 50])
-        if self.envelopeBounds['phiMin'] > np.rad2deg(observation[9]) or np.rad2deg(observation[9]) > self.envelopeBounds['phiMax']:
+        # conditions_if_reset_speed = any([observation[0] < 30, observation[0] > 50])
+        if np.rad2deg(observation[9]) < self.envelopeBounds['phiMin'] or np.rad2deg(observation[9]) > \
+                self.envelopeBounds['phiMax']:
             print("roll limits", np.rad2deg(observation[9]))
             done = 1
         # conditions_if_reset_phi = any([self.envelopeBounds['phiMin'] > np.rad2deg(observation[9]), np.rad2deg(observation[9]) > self.envelopeBounds['phiMax']])
-        if self.envelopeBounds['thetaMin'] > np.rad2deg(observation[10]) or np.rad2deg(observation[10]) > self.envelopeBounds['thetaMax']:
+        if np.rad2deg(observation[10]) < self.envelopeBounds['thetaMin_grad'] or np.rad2deg(observation[10]) > \
+                self.envelopeBounds['thetaMax_grad']:
             print("pitch limits", np.rad2deg(observation[10]))
             done = 1
         return done

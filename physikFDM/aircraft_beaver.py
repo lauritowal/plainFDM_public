@@ -232,7 +232,7 @@ class Aircraft_baever(object):
         manifold = np.interp(motordrehzahl, self.geometry.rpmMotor, self.geometry.manifold)  # rpm
         dpt = ((2 / (self.TAS**3)) / self.rho) * (((((manifold + 7.4) * (motordrehzahl + 2010)) * 0.00412) + ((408.0 - 0.0965 * motordrehzahl) * (1.0 - self.rho/1.225) - 326.5)) * 0.7355) * 191.18 + 0.08696
 
-        cx = dpt * self.geometry.cx_dpt + dpt*dpt * self.alpha * self.geometry.cx_dpt2_alpha * 1  # Headline: Faktor 3 durch RT
+        cx = dpt * self.geometry.cx_dpt + dpt*dpt * self.alpha * self.geometry.cx_dpt2_alpha * 10  # Headline: Faktor 10 durch RT
         cy = 0
         cz = dpt * self.geometry.cz_dpt
 

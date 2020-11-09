@@ -30,7 +30,7 @@ class WrapperOpenAI (gym.Env):
         high_action_space = np.array([1.], dtype=np.float32)
         self.action_space = spaces.Box(low=-high_action_space, high=high_action_space, dtype=np.float32)
         # Zustandsraum 4 current_phi_dot, current_phi, abs(error_current_phi_target_phi), integration_error
-        high_observation_space = np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32)
+        high_observation_space = np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32)
         self.observation_space = spaces.Box(low=-high_observation_space, high=high_observation_space, dtype=np.float32)
         # reward
         self.reward_range = np.array([-np.inf, np.inf], dtype=np.float32)
@@ -48,8 +48,8 @@ class WrapperOpenAI (gym.Env):
                              'targetPsi': 0,
                              'targetSpeed': 0,
                              'target_z_dot': 0.0}
-        self.envelopeBounds = {'phiMax': 20,
-                               'phiMin': -20,
+        self.envelopeBounds = {'phiMax_grad': 30,
+                               'phiMin_grad': -30,
                                'thetaMax_grad': 30,
                                'thetaMin_grad': -30,
                                'speedMax': 72,
@@ -60,9 +60,9 @@ class WrapperOpenAI (gym.Env):
         self.action_servo_command_history_elevator = np.zeros(2)
         self.bandbreite_servo_actions_elevator = 0
 
-        self.servo_command_thrust = 0
-        self.action_servo_command_history_thrust = np.zeros(2)
-        self.bandbreite_servo_actions_thrust = 0
+        self.servo_command_aileron = 0
+        self.action_servo_command_history_aileron = np.zeros(2)
+        self.bandbreite_servo_actions_aileron = 0
 
         # fuer plotten
         self.plotter = PlotState()
@@ -70,14 +70,14 @@ class WrapperOpenAI (gym.Env):
         self.anzahlEpisoden = 0
 
     def reset(self):
-        np.random.seed = 402
+        np.random.seed()
         self.servo_command_elevator = 0
         self.action_servo_command_history_elevator = np.zeros(2)
         self.bandbreite_servo_actions_elevator = 0
 
-        self.servo_command_thrust = 0
-        self.action_servo_command_history_thrust = np.zeros(2)
-        self.bandbreite_servo_actions_thrust = 0
+        self.servo_command_aileron = 0
+        self.action_servo_command_history_aileron = np.zeros(2)
+        self.bandbreite_servo_actions_aileron = 0
 
         self.anzahlSteps = 1
         self.anzahlEpisoden += 1
@@ -85,7 +85,8 @@ class WrapperOpenAI (gym.Env):
         # set targets
         self.targetValues['targetSpeed'] = np.random.uniform(47, 53)  # m/s
         self.targetValues['targetTheta_grad'] = np.random.uniform(-5, 5)  # m/s
-        self.targetValues['target_z_dot'] = np.random.uniform(-2, 2)  # m/s
+        self.targetValues['targetPhi_grad'] = np.random.uniform(-25, 25)  # m/s
+        self.targetValues['target_z_dot'] = np.random.uniform(0, 0)  # m/s
         print('new Targets: ', self.targetValues)
 
         # set state at initial
@@ -99,20 +100,17 @@ class WrapperOpenAI (gym.Env):
         return observation  # reward, done, info can't be included
 
     def step(self, action_command):
-        self.servo_command_elevator = action_command[1]
+        self.servo_command_elevator = action_command[0]
         self.anzahlSteps += 1
-        #self.aircraft_beaver.delta_elevator = np.deg2rad(np.clip(action_command[1], -1, 1) * (20))
-        self.aircraft_beaver.delta_elevator = self.pid._innerLoopElevator(np.deg2rad(7), self.aircraft_beaver.theta,
+        self.aircraft_beaver.delta_elevator = np.deg2rad(np.clip(self.servo_command_elevator, -1, 1) * (20))
+        '''self.aircraft_beaver.delta_elevator = self.pid._innerLoopElevator(np.deg2rad(7), self.aircraft_beaver.theta,
                                    self.aircraft_beaver.q,
-                                   self.aircraft_beaver.delta_elevator)
+                                   self.aircraft_beaver.delta_elevator)'''
         # MultiAgent
-        #self.aircraft_beaver.delta_thrust = 1.0
-        self.servo_command_thrust = action_command[0]
-        self.aircraft_beaver.delta_thrust = np.interp(action_command[0], [-1, 1], [0.0, 1])  # Übersetzung der Ausgabe KNN zu Thrust-Setting
+        self.servo_command_aileron = action_command[1]
+        self.aircraft_beaver.delta_aileron = np.deg2rad(np.clip(self.servo_command_aileron, -1, 1) * (-15))
         # MultiAgent
-        self.aircraft_beaver.delta_aileron = self.pid._innerLoopAileron(np.deg2rad(0), self.aircraft_beaver.phi,
-                                                                        self.aircraft_beaver.p,
-                                                                        self.aircraft_beaver.delta_aileron)
+        self.aircraft_beaver.delta_thrust = 0.7
         # Headline: integrate step
         solver = self.dynamicSystem.integrate(self.aircraft_beaver.getState(), self.aircraft_beaver.getForces(),
                                               self.aircraft_beaver.getMoments(),
@@ -150,8 +148,9 @@ class WrapperOpenAI (gym.Env):
 
     def user_defined_observation(self, aircraft_state_f_ks, z_dot_g_ks):
         current_u = aircraft_state_f_ks[0]
-        current_w = aircraft_state_f_ks[2]
+        current_phi_grad = np.rad2deg(aircraft_state_f_ks[9])
         current_theta_grad = np.rad2deg(aircraft_state_f_ks[10])
+        error_current_phi_grad = (np.rad2deg(aircraft_state_f_ks[9]) - self.targetValues['targetPhi_grad'])
 
         self.action_servo_command_history_elevator = np.roll(self.action_servo_command_history_elevator,
                                                              len(self.action_servo_command_history_elevator) - 1)
@@ -160,53 +159,56 @@ class WrapperOpenAI (gym.Env):
         command_maximum_elevator = np.max(self.action_servo_command_history_elevator)
         self.bandbreite_servo_actions_elevator = np.abs(command_minimum_elevator - command_maximum_elevator)
 
-        self.action_servo_command_history_thrust = np.roll(self.action_servo_command_history_thrust,
-                                                             len(self.action_servo_command_history_thrust) - 1)
-        self.action_servo_command_history_thrust[-1] = self.servo_command_thrust
-        command_minimum_thrust = np.min(self.action_servo_command_history_thrust)
-        command_maximum_thrust = np.max(self.action_servo_command_history_thrust)
-        self.bandbreite_servo_actions_thrust = np.abs(command_minimum_thrust - command_maximum_thrust)
+        self.action_servo_command_history_aileron = np.roll(self.action_servo_command_history_aileron,
+                                                             len(self.action_servo_command_history_aileron) - 1)
+        self.action_servo_command_history_aileron[-1] = self.servo_command_aileron
+        command_minimum_aileron = np.min(self.action_servo_command_history_aileron)
+        command_maximum_aileron = np.max(self.action_servo_command_history_aileron)
+        self.bandbreite_servo_actions_aileron = np.abs(command_minimum_aileron - command_maximum_aileron)
 
         user_defined_observation = np.asarray(
-            [z_dot_g_ks, current_theta_grad, current_u, command_minimum_elevator, command_maximum_elevator, command_minimum_thrust, command_maximum_thrust])
+            [current_u, z_dot_g_ks, current_theta_grad, current_phi_grad, error_current_phi_grad, command_minimum_elevator, command_maximum_elevator,
+             command_minimum_aileron, command_maximum_aileron])
 
         return user_defined_observation
 
     def compute_reward(self, aircraft_state_f_ks, z_dot_g_ks):
         reward0 = self.reward_elevator(aircraft_state_f_ks, z_dot_g_ks)
-        reward1 = self.reward_thrust(aircraft_state_f_ks)
-        return reward1, reward0
+        reward1 = self.reward_aileron(aircraft_state_f_ks)
+        return reward0, reward1
 
     def reward_elevator(self, aircraft_state_f_ks, z_dot_g_ks):
         current_theta_grad = np.rad2deg(aircraft_state_f_ks[10])
-        current_theta_dot = aircraft_state_f_ks[7]
         current_u = aircraft_state_f_ks[0]
         reward0 = 0
         # out of bounds
         if current_theta_grad < self.envelopeBounds['thetaMin_grad'] or current_theta_grad > self.envelopeBounds[
             'thetaMax_grad']:
-            reward0 += -1000
-        if current_u < self.envelopeBounds['speedMin'] or current_u > self.envelopeBounds['speedMax']:
-            reward0 += -1000
+            reward0 += -100
+        if current_u < self.envelopeBounds['speedMin'] or current_u > self.envelopeBounds[
+            'speedMax']:
+            reward0 += -100
         # Zielgröße Sinken/steigen
         if np.abs(self.targetValues['target_z_dot'] - z_dot_g_ks) > 0.5:
             reward0 += -1
         else:
             reward0 += 10
         reward0 += -1 * self.bandbreite_servo_actions_elevator
-        reward0 = 0
         return reward0
 
-    def reward_thrust(self, aircraft_state_f_ks):
-        current_u = aircraft_state_f_ks[0]
+    def reward_aileron(self, aircraft_state_f_ks):
+        current_phi_grad = np.rad2deg(aircraft_state_f_ks[9])
         reward1 = 0
-        if current_u < self.envelopeBounds['speedMin'] or current_u > self.envelopeBounds['speedMax']:
+        # out of bounds
+        if current_phi_grad < self.envelopeBounds['phiMin_grad'] or current_phi_grad > self.envelopeBounds[
+            'phiMax_grad']:
             reward1 += -1000
-        if np.abs(current_u - self.targetValues['targetSpeed']) > 0.3:
+        # Zielgröße Sinken/steigen
+        if np.abs(self.targetValues['targetPhi_grad'] - current_phi_grad) > 0.5:
             reward1 += -1
         else:
             reward1 += 10
-        reward1 += -1 * self.bandbreite_servo_actions_thrust
+        reward1 += -1 * self.bandbreite_servo_actions_aileron
         return reward1
 
     def check_done(self, observation):
@@ -216,8 +218,8 @@ class WrapperOpenAI (gym.Env):
             print("speed limits", observation[0])
             done = 1
         # conditions_if_reset_speed = any([observation[0] < 30, observation[0] > 50])
-        if np.rad2deg(observation[9]) < self.envelopeBounds['phiMin'] or np.rad2deg(observation[9]) > \
-                self.envelopeBounds['phiMax']:
+        if np.rad2deg(observation[9]) < self.envelopeBounds['phiMin_grad'] or np.rad2deg(observation[9]) > \
+                self.envelopeBounds['phiMax_grad']:
             print("roll limits", np.rad2deg(observation[9]))
             done = 1
         # conditions_if_reset_phi = any([self.envelopeBounds['phiMin'] > np.rad2deg(observation[9]), np.rad2deg(observation[9]) > self.envelopeBounds['phiMax']])

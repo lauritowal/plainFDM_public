@@ -28,7 +28,7 @@ class WrapperOpenAI (gym.Env):
         high_action_space = np.array([1.], dtype=np.float32)
         self.action_space = spaces.Box(low=-high_action_space, high=high_action_space, dtype=np.float32)
         # Zustandsraum 4 current_phi_dot, current_phi, abs(error_current_phi_target_phi), integration_error
-        high_observation_space = np.array([np.inf, np.inf, np.inf, np.inf, np.inf], dtype=np.float32)
+        high_observation_space = np.array([np.inf, np.inf], dtype=np.float32)
         self.observation_space = spaces.Box(low=-high_observation_space, high=high_observation_space, dtype=np.float32)
         # reward
         self.reward_range = np.array([-np.inf, np.inf], dtype=np.float32)
@@ -66,6 +66,7 @@ class WrapperOpenAI (gym.Env):
         self.bandbreite_servo_actions = 0
 
     def reset(self):
+        np.random.seed()
         self.observationErrorAkkumulation = np.zeros(3)
         self.integration_error_stepsize_ = 0
 
@@ -123,11 +124,11 @@ class WrapperOpenAI (gym.Env):
     def user_defined_observation(self, observation):
         # return: current_phi_dot, current_phi, abs(error_current_phi_target_phi), integration_error
         current_phi_dot = observation[6]
-        current_phi = observation[9]
-        error_current_phi_to_target_phi = np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi_grad'])
+        current_phi = np.rad2deg(observation[9])
+        error_current_phi_to_target_phi = current_phi - self.targetValues['targetPhi_grad']
 
         self.observationErrorAkkumulation = np.roll(self.observationErrorAkkumulation, 1)
-        self.observationErrorAkkumulation[-1] = error_current_phi_to_target_phi
+        self.observationErrorAkkumulation[-1] = (error_current_phi_to_target_phi)
         self.integration_error_stepsize_ = np.add.reduce(self.observationErrorAkkumulation)
 
         self.action_servo_command_history = np.roll(self.action_servo_command_history, len(self.action_servo_command_history) - 1)
@@ -137,7 +138,7 @@ class WrapperOpenAI (gym.Env):
         self.bandbreite_servo_actions = np.abs(command_minimum - command_maximum)
 
         observation = np.asarray(
-            [current_phi_dot, current_phi, error_current_phi_to_target_phi, self.integration_error_stepsize_, self.servo_command])
+            [current_phi, error_current_phi_to_target_phi])
 
         return observation
 
@@ -147,7 +148,7 @@ class WrapperOpenAI (gym.Env):
         if np.rad2deg(observation[9]) > self.envelopeBounds['phiMax_grad'] or np.rad2deg(observation[9]) < self.envelopeBounds['phiMin_grad']:
             reward += -1000
         # Abweichung abs(target-current) > 1 -> -1
-        reward += -0.05 * (np.rad2deg(observation[9]) - self.targetValues['targetPhi_grad'])**2
+        reward += -0.03 * (np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi_grad']))**2
         reward += -0.008 * self.servo_command**2
         return reward
 
