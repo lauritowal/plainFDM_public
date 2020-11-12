@@ -28,7 +28,7 @@ class WrapperOpenAI (gym.Env):
         high_action_space = np.array([1.], dtype=np.float32)
         self.action_space = spaces.Box(low=-high_action_space, high=high_action_space, dtype=np.float32)
         # Zustandsraum 4 current_phi_dot, current_phi, abs(error_current_phi_target_phi), integration_error
-        high_observation_space = np.array([np.inf, np.inf], dtype=np.float32)
+        high_observation_space = np.array([np.inf, np.inf, np.inf], dtype=np.float32)
         self.observation_space = spaces.Box(low=-high_observation_space, high=high_observation_space, dtype=np.float32)
         # reward
         self.reward_range = np.array([-np.inf, np.inf], dtype=np.float32)
@@ -75,9 +75,9 @@ class WrapperOpenAI (gym.Env):
         self.bandbreite_servo_actions = 0
         self.anzahlSteps = 1
         self.anzahlEpisoden += 1
-        self.targetValues['targetPhi_grad'] = np.random.uniform(-15, 15)
+        self.targetValues['targetPhi_grad'] = np.random.uniform(-20, 20)
         print('new Target (deg): ', self.targetValues)
-        phi_as_random = np.deg2rad(np.random.uniform(-3, 3))
+        phi_as_random = np.deg2rad(np.random.uniform(-25, 25))
         self.aircraft.setState(
             np.array([40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, phi_as_random, np.deg2rad(-1), 0.0]))
         observation = self.user_defined_observation(self.aircraft.getState())
@@ -138,7 +138,7 @@ class WrapperOpenAI (gym.Env):
         self.bandbreite_servo_actions = np.abs(command_minimum - command_maximum)
 
         observation = np.asarray(
-            [current_phi, error_current_phi_to_target_phi])
+            [current_phi_dot, current_phi, error_current_phi_to_target_phi])
 
         return observation
 
@@ -148,8 +148,10 @@ class WrapperOpenAI (gym.Env):
         if np.rad2deg(observation[9]) > self.envelopeBounds['phiMax_grad'] or np.rad2deg(observation[9]) < self.envelopeBounds['phiMin_grad']:
             reward += -1000
         # Abweichung abs(target-current) > 1 -> -1
-        reward += -0.03 * (np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi_grad']))**2
-        reward += -0.008 * self.servo_command**2
+        if (np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi_grad'])) > 1.0:
+            reward += -1
+        if (np.abs(np.rad2deg(observation[9]) - self.targetValues['targetPhi_grad'])) < 1.0:
+            reward += 100
         return reward
 
     def check_done(self, observation):
