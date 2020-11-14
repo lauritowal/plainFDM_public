@@ -26,13 +26,13 @@ class Aircraft_baever(object):
         self.z = 0  # m
 
         # 4. Winkelgeschwindigkeiten p,q,r
-        self.p = -0.00197 # rad/s
-        self.q = 0.00331  # rad/s
-        self.r = 0.0339 # rad/s
+        self.p = 0 # rad/s
+        self.q = 0  # rad/s
+        self.r = 0 # rad/s
 
-        self.phi = 0.0974 # rad
-        self.theta = 0.0873  # rad
-        self.psi = 0.142  # rad
+        self.phi = 0 # rad
+        self.theta = 0  # rad
+        self.psi = 0  # rad
 
         self.alpha = 0.0  # Deg
         self.alphaDot = 0.0
