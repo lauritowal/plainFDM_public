@@ -1,0 +1,1 @@
+from thesis_laurito.envs.thesis_laurito import ThesisLaurito

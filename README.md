@@ -1,5 +1,10 @@
 # Flugdynamisches Modell
 
+# Getting started
+1. Clone this repo
+2. Do `pip3 install -e .` in root folder
+3. Now you can use `import fdm` in python
+ 
 # Beschreibung:
 
 detaillierte Beschreibung unter:
@@ -21,8 +26,8 @@ Im Gegensatz zur Matlab-Implementierung sind die Momente des Motors 0.
 
 Die Nutzung der DatCom Dateien erfordert in der Datei Simulation den Import von:
 
-from FDM.physikFDM.aircraft import Aircraft
-from FDM.lfz_controlFDM.pid_regler_c172 import PidRegler
+from plain_fdm.physikFDM.aircraft import Aircraft
+from plain_fdm.lfz_controlFDM.pid_regler_c172 import PidRegler
 
 und die Instanziierung von Objekten der jeweiligen Klassen. 
 
